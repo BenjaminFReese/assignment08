@@ -3,3 +3,29 @@ title: "Assignment 08"
 author: "Benjamin Reese"
 format: html
 ---
+
+### Packages
+```{r packages}
+## Loading in Packages
+library(readr)
+library(tidyverse)
+library(tidymodels)
+```
+
+## Exercise 01
+
+### (a)
+
+```{r loading and cleaning votes, message=FALSE, warning=FALSE}
+## Loading in Data
+votes_time_series <- read_csv("data/votes_time_series.csv")
+
+## Replacing NAs with 0s
+votes_103 <- votes_time_series %>%
+  mutate_all(funs(ifelse(is.na(.), 0, .))) %>%
+  filter(session==103)
+
+```
+
+### (b)
+
