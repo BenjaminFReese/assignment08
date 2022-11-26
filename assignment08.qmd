@@ -11,6 +11,8 @@ library(readr)
 library(tidyverse)
 library(tidymodels)
 library(patchwork)
+library(factoextra)
+library(broom)
 ```
 
 ## Exercise 01
@@ -85,3 +87,38 @@ p1 + p2
 ```
 
 ## Exercise 02
+
+### (a)
+
+```{r creating votes numeric, message=FALSE, warning=FALSE}
+## Filtering votes_103 to only include votes
+votes_numeric <- votes_103 %>%
+  select(starts_with("v"))
+```
+
+```{r exercise2b, warning=FALSE, message=FALSE}
+## Setting Seed
+set.seed(20220412) 
+
+## Creating recipe
+votes_kmeans_rec <- recipe(
+   formula = ~ .,
+   data = votes_numeric) %>%
+   step_range(all_predictors())
+
+votes_bake <- votes_kmeans_rec %>%
+  prep() %>%
+  bake(new_data = votes_numeric)
+
+## Creating model
+votes_kmeans_spec <- k_means(num_clusters = 4) %>%
+  set_engine("stats", nstart = 100) %>%
+  set_mode(mode="partition")
+
+## Creating workflow
+votes_kmeans_wflow <- workflow(
+  preprocessor = votes_kmeans_rec,
+  spec = votes_kmeans_spec)
+ 
+```
+
