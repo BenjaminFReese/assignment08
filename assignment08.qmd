@@ -5,65 +5,83 @@ format: html
 ---
 
 ### Packages
-```{r packages}
+```{r packages, warning=FALSE,message=FALSE}
 ## Loading in Packages
 library(readr)
 library(tidyverse)
 library(tidymodels)
+library(patchwork)
 ```
 
 ## Exercise 01
 
 ### (a)
 
-```{r loading and cleaning votes, message=FALSE, warning=FALSE}
-## Loading in Data
+```{r loading and cleaning votes data, message=FALSE, warning=FALSE}
+## Loading in  votes data
 votes_time_series <- read_csv("data/votes_time_series.csv")
+## Loading in states region data
+states_regions <- read_csv("data/states_regions.csv")
 
 ## Replacing NAs with 0s
 votes_103 <- votes_time_series %>%
   mutate_all(funs(ifelse(is.na(.), 0, .))) %>%
-  filter(session==103)
-View(votes_103)
+  filter(session==103) %>%
+  left_join(states_regions, by = c("state" = "State Code"))
+
 
 ```
 
 ### (b)
 
-```{r votes recipe}
+```{r votes recipe, message=FALSE, warning=FALSE}
 ## Creating the Recipe for PCA
-votes_pca_rec <- recipe(~ ., data = votes_103) %>%
-  step_nzv(all_predictors()) %>%
-  step_normalize(all_numeric_predictors()) %>% # center and scale (normalize) all predictors
-  step_pca(all_numeric_predictors(), num_comp = 3) %>%   # only keep three components
+votes_pca_rec <-
+  recipe(~., data = votes_103) %>%
+  step_pca(starts_with("v")) %>%   
   prep()  # run prep to prepare recipe
 
 ```
 
 ### (c)
 
-```{r votes variance}
-## Checking the variance
-tidy(votes_pca_rec, number = 3, type = "variance")
+```{r votes variance, message=FALSE, warning=FALSE}
+## Checking the percent variance for pc1
+tidy(votes_pca_rec, number=1, type = "variance") %>%
+  filter(terms == "percent variance", component == 1)
 
-## Obtaining Loadings
-tidy(votes_pca_rec, number = 3, type = "coef")
+## Checking the cumulative percent variance for first five components
+tidy(votes_pca_rec, number=1, type = "variance") %>%
+  filter(terms == "cumulative percent variance", component <= 5)
+
 ```
+
+The first principal component explains $\approx 38%$ of the variance. The first five principal components cumulatively explain $\approx 68%$ of the variance. Most of the variance is being explained in the first two principal components.
 
 ### (d)
 
 ```{r votes plots, message=FALSE, warning=FALSE}
-## Baking
-votes_pca_rec %>%
-  bake(new_data = NULL) %>%
+## Party Plot
+p1 <- votes_pca_rec %>%
+  bake(new_data = votes_103) %>%
   ggplot(aes(x=PC1, y=PC2, color=party)) +
   geom_point() +
   scale_color_manual(values = c("D" = "blue", "R"= "red")) +
-  theme_minimal()
+  theme_minimal() +
+  labs(x="PC1", y= "PC2", title = "PC1 and PC2 of the 103rd Senate",
+       subtitle = "Color by Party", color="Party")
 
-## Loading in states region data
-states_regions <- read_csv("data/states_regions.csv")
+## Region Plot
+p2 <- votes_pca_rec %>%
+  bake(new_data = NULL) %>%
+  ggplot(aes(x=PC1, y=PC2, color=Region)) +
+  geom_point() +
+  theme_minimal() + 
+  labs(x="PC1", y= "PC2", title = "PC1 and PC2 of the 103rd Senate",
+       subtitle = "Color by Region", color="US Region")
 
-
+## Displaying Plots
+p1 + p2
 ```
 
+## Exercise 02
