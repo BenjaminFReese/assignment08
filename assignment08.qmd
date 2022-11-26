@@ -96,29 +96,29 @@ votes_numeric <- votes_103 %>%
   select(starts_with("v"))
 ```
 
+### (b)
+
 ```{r exercise2b, warning=FALSE, message=FALSE}
 ## Setting Seed
 set.seed(20220412) 
 
 ## Creating recipe
-votes_kmeans_rec <- recipe(
-   formula = ~ .,
-   data = votes_numeric) %>%
-   step_range(all_predictors())
+kmeans_rec <- recipe(formula = ~ .,data = votes_numeric)
 
-votes_bake <- votes_kmeans_rec %>%
-  prep() %>%
-  bake(new_data = votes_numeric)
+## Prepping and Baking
+votes_numeric <- kmeans_rec %>%
+   prep() %>%
+   bake(new_data = votes_numeric)
 
-## Creating model
-votes_kmeans_spec <- k_means(num_clusters = 4) %>%
-  set_engine("stats", nstart = 100) %>%
-  set_mode(mode="partition")
+## Silhouette Calculation
+fviz_nbclust(votes_numeric, FUN = kmeans, method = "silhouette")
 
-## Creating workflow
-votes_kmeans_wflow <- workflow(
-  preprocessor = votes_kmeans_rec,
-  spec = votes_kmeans_spec)
- 
+## Gap Statistic Calculation
+fviz_nbclust(votes_numeric, FUN = kmeans, method = "gap_stat")
+
+## WSS Calculation
+fviz_nbclust(votes_numeric, FUN = kmeans, method = "wss")
+
+
 ```
 
