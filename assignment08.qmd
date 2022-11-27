@@ -217,7 +217,13 @@ tf_idf %>%
 ## Importing Senate bills data
 bills <- read_csv("data/senate_bills_114.csv") %>%
   mutate(passed = factor(passed, labels = c("1", "0"), levels = c("1", "0")))
+
+## Counting How Many Bills Passed
+bills %>%
+  count(passed)
 ```
+
+108 bills passed and 3440 bills failed.
 
 ### (b)
 
@@ -287,4 +293,48 @@ lr_fit <-
   fit(data = bills_train)
 ```
 
+### (f)
+
+```{r fitting model to testing data, warning=FALSE, message=FALSE}
+## Selecting the Predictions
+predictions <- bind_cols(
+  bills_test,
+  predict(object = lr_fit, new_data = bills_test),
+  predict(object = lr_fit, new_data = bills_test, type = "prob")
+)
+
+## The Predictions
+select(predictions, passed, starts_with(".pred"))
+
+## Confusion matrix
+conf_mat(data = predictions, truth = passed, estimate = .pred_class)
+
+## Accuracy
+accuracy(data = predictions, truth = passed, estimate = .pred_class)
+
+## Precision
+precision(data = predictions, truth = passed, estimate = .pred_class)
+
+## Recall/Sensitivity
+recall(data = predictions, truth = passed, estimate = .pred_class)
+
+## ROC Curve
+roc_curve(data = predictions, truth = passed, estimate = .pred_1)
+
+## ROC Curve Plot
+predictions %>% 
+  roc_curve(truth = passed, .pred_1) %>% 
+  autoplot()
+
+## AUC
+roc_auc(data = predictions, truth = passed, estimate = .pred_1)
+```
+
+The accuracy, or how often the model is correct, is quite high, about .96. A high accuracy, all esle equal, is a sign of a high quality model. The precision and recall are not as high, though. Recall, or how often the model is correct when there is an event is only about .13 and precision, or how often the model is correct when it predicts events is about .33. Both of these values are quite low. The ROC and AUC, however, are relatively good. The ROC Curve, as shown in the plot above, is consistent with a good classifier. Further, the AUC is about .86, which is also good, though not excellent. Overall, the model has high accuracy, but its useful is limited by its low recall and precision.
+
+The first improvement that I can suggest is to include the actual text of each bill beyond their short descriptions. Have more text and, more specifically, a model that predicts bill passage based on the language in the actual bill provisions should increase the quality of the model. In addition, having more data, even without bill text, would be helpful. Having many years to bills may improve model fit, though with changing partisan dynamics, a longer time frame may not improve model quality. 
+
+Second, it would be helpful to include other non-text variables in the model such as the party of the sponsor, the party in control of the chamber, the cost of the bill, and other factors that may influence the probability of a bill passing. 
+
+Third, utilizing v-fold cross-validation could produce a "better" model that could then be implemented on the testing data. Through the process of cross-validation, perhaps a better model could be found. Further, utilizing alternate classification algorithms like a CART model or a random forest model could increase the accuracy and these models, alongside cross-validation, should be tried to find the best candidate model.
 
