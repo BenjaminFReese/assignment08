@@ -207,3 +207,28 @@ tf_idf %>%
 ```
 
 
+## Exercise 04
+
+### (a)
+
+```{r reading and cleaning senate votes, warning=FALSE, message=FALSE}
+## Importing Senate bills data
+bills <- read_csv("data/senate_bills_114.csv") %>%
+  mutate(passed = factor(passed, labels = c("1", "0"), levels = c("1", "0")))
+```
+
+### (b)
+
+```{r splitting bills data}
+## Splitting into training and testing
+bills <- bills %>%
+  select(-bill_number)
+
+## Splitting the Sample
+split <- initial_split(bills, prop = 0.75, strata = "passed")
+
+## Training and Testing
+bills_train <- training(split)
+bills_test <- testing(split)
+```
+
