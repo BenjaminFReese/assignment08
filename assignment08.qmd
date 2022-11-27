@@ -2,6 +2,7 @@
 title: "Assignment 08"
 author: "Benjamin Reese"
 format: html
+self-contained: true
 ---
 
 ### Packages
@@ -19,6 +20,8 @@ library(SnowballC)
 library(igraph)
 library(ggraph)
 library(stringr)
+library(stopwords)
+library(textrecipes)
 ```
 
 ## Exercise 01
@@ -137,7 +140,6 @@ fviz_nbclust(votes_numeric, FUN = kmeans, method = "wss")
 
 ```
 
-
 ### (d)
 
 ## Exercise 03
@@ -231,4 +233,18 @@ split <- initial_split(bills, prop = 0.75, strata = "passed")
 bills_train <- training(split)
 bills_test <- testing(split)
 ```
+
+### (c)
+
+```{r creating bills recipe}
+## Creating recipe
+bills_rec <- recipe(passed~., data = bills_train) %>%
+  step_tokenize(description) %>%
+  step_stopwords(description) %>%
+  step_stem(description) %>%
+  step_tokenfilter(description) %>%
+  step_tfidf(description)
+```
+
+
 
