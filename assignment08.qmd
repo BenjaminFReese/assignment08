@@ -18,6 +18,7 @@ library(lubridate)
 library(SnowballC)
 library(igraph)
 library(ggraph)
+library(stringr)
 ```
 
 ## Exercise 01
@@ -157,6 +158,28 @@ tidy_exec <- exec_orders %>%
   filter(!is.na(bigram))
 ```
 
+### (b)
+
+```{r exercise 3b}
+## Separating, filtering, and counting bigrams
+bigram_150 <- tidy_exec %>%
+  separate(col = "bigram", into = c("word1", "word2")) %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>%
+  count(word1, word2, sort = TRUE) %>%
+  slice(1:150)
+
+# plot the bigrams that exist more than 150 times
+bigram_graph <- bigram_150 %>%
+  graph_from_data_frame()
+
+# plot the relationships (you may want to make the plot window bigger)
+set.seed(2017)
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link() +
+  geom_node_point() +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+```
 
 
 
