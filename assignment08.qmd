@@ -221,7 +221,7 @@ bills <- read_csv("data/senate_bills_114.csv") %>%
 
 ### (b)
 
-```{r splitting bills data}
+```{r splitting bills data, warning=FALSE, message=FALSE}
 ## Splitting into training and testing
 bills <- bills %>%
   select(-bill_number)
@@ -236,7 +236,7 @@ bills_test <- testing(split)
 
 ### (c)
 
-```{r creating bills recipe}
+```{r creating bills recipe, warning=FALSE, message=FALSE}
 ## Creating recipe
 bills_rec <- recipe(passed~., data = bills_train) %>%
   step_tokenize(description) %>%
@@ -246,5 +246,23 @@ bills_rec <- recipe(passed~., data = bills_train) %>%
   step_tfidf(description)
 ```
 
+### (d)
 
+```{r prepping and baking bills recipe, warning=FALSE, message=FALSE}
+## Prepping and Baking Recipe
+bake(prep(bills_rec, training = bills_train), new_data = bills_train)
+
+custom_stop_words <- c("1", "2", "3", "2015", "2016", "a", "an", "and", "account", "act")
+
+## Re-creating recipe
+bills_rec2 <- recipe(passed~., data = bills_train) %>%
+  step_tokenize(description) %>%
+  step_stopwords(description, custom_stopword_source = custom_stop_words) %>%
+  step_stem(description) %>%
+  step_tokenfilter(description) %>%
+  step_tfidf(description)
+
+## Prepping and Baking Recipe
+bake(prep(bills_rec2, training = bills_train), new_data = bills_train)
+```
 
