@@ -112,21 +112,22 @@ votes_numeric <- votes_103 %>%
 set.seed(20220412) 
 
 ## Creating recipe
-kmeans_rec <- recipe(formula = ~ .,data = votes_numeric)
+kmeans_rec <- recipe(formula = ~ .,data = votes_numeric) %>%
+  step_select(all_numeric())
 
 ## Prepping and Baking
-votes_numeric <- kmeans_rec %>%
+votes_baked <- kmeans_rec %>%
    prep() %>%
    bake(new_data = votes_numeric)
 
 ## Silhouette Calculation
-fviz_nbclust(votes_numeric, FUN = kmeans, method = "silhouette")
+fviz_nbclust(votes_baked, FUN = kmeans, method = "silhouette")
 
 ## Gap Statistic Calculation
-fviz_nbclust(votes_numeric, FUN = kmeans, method = "gap_stat")
+fviz_nbclust(votes_baked, FUN = kmeans, method = "gap_stat")
 
 ## WSS Calculation
-fviz_nbclust(votes_numeric, FUN = kmeans, method = "wss")
+fviz_nbclust(votes_baked, FUN = kmeans, method = "wss")
 
 
 ```
@@ -134,13 +135,99 @@ fviz_nbclust(votes_numeric, FUN = kmeans, method = "wss")
 ### (c)
 
 ```{r creating k means function}
-## Creating k-means function
+## Creating the Function
 
+#' k_clust
+#'
+#' @param k a numeric variable indicating the number of clusters to be used for k-means clustering
+#' @param dataset a data frame to be input into the k-means cluster analysis model
+#'
+#' @return a ggplot object that plots the first and second principal components with color coded clusters
+#'
+#'
+#' @examples k_clust(k=2, data=votes_numeric)
+k_clust <- function(k, dataset) {
+  ## Creating recipe
+k_means_rec <- recipe(formula = ~ .,data = dataset) %>%
+  step_select(all_numeric())
 
+## Creating model
+k_means_spec <- k_means(num_clusters = k) %>%
+  set_engine("stats", nstart = 100)
+
+## Creating workflow
+k_means_wflow <- workflow(
+  preprocessor = k_means_rec,
+  spec = k_means_spec)
+
+## Fitting Model
+k_means_fit <- k_means_wflow %>%
+  fit(data = dataset)
+
+## Plot
+ggplot() +
+  geom_point(
+    data = k_means_fit,
+    mapping = aes(PC1, PC2, color = factor(cluster2)),
+    alpha = 0.5) +
+  scale_color_manual(values = c("blue", "red")) +
+  labs(title = "K-Means with K=2 and PCA",
+       x = "PC1", y = "PC2") +
+  theme_minimal() +
+  guides(text = NULL)
+}
+
+## Creating model
+votes_kmeans_spec <- k_means(num_clusters = 4) %>%
+  set_engine("stats", nstart = 100)
+
+## Creating workflow
+votes_kmeans_wflow <- workflow(
+  preprocessor = kmeans_rec,
+  spec = votes_kmeans_spec)
+
+## Fitting Model
+votes_kmeans_fit <- kmeans_wflow %>%
+  fit(data = votes_numeric)
+
+votes_clusters <- bind_cols(
+  select(votes, name, party),
+  select(votes_pca, PC1, PC2),
+  cluster2 = votes_kmeans_2 %>%
+  extract_cluster_assignment() %>%
+     pull(.cluster),
+  cluster5 = votes_kmeans_5 %>%
+    extract_cluster_assignment() %>%
+    pull(.cluster))
+
+## Plot
+ggplot() +
+  geom_point(
+    data = votes_clusters,
+    mapping = aes(PC1, PC2, color = factor(cluster2)),
+    alpha = 0.5) +
+  geom_text(data = filter(votes_pca, name %in% names),
+            mapping = aes(PC1, PC2,)) +
+  scale_color_manual(values = c("blue", "red")) +
+  labs(title = "K-Means with K=2 and PCA",
+       x = "PC1",
+       y = "PC2") +
+  theme_minimal() +
+  guides(text = NULL)
 
 ```
 
 ### (d)
+
+```{r testing optimal clusters}
+## Running functions
+k_clust(k=2, data=votes_numeric)
+
+k_clust(k=4, data=votes_numeric)
+
+k_clust(k=8, data=votes_numeric)
+```
+
 
 ## Exercise 03
 
