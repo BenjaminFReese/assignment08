@@ -181,5 +181,29 @@ ggraph(bigram_graph, layout = "fr") +
   geom_node_text(aes(label = name), vjust = 1, hjust = 1)
 ```
 
+### (c)
+
+```{r calculating tf_idf}
+## Calculating tf_idf for each bigram-president pair
+tf_idf <- tidy_exec %>%
+  separate(col = "bigram", into = c("word1", "word2")) %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word) %>%
+  mutate(bigrams = paste(word1, word2)) %>%
+  count(president, bigrams, sort = TRUE) %>%
+  bind_tf_idf(term = bigrams, document = president, n = n)
+
+## Plotting bigram-president pair
+tf_idf %>%
+  group_by(president) %>%
+  top_n(15, tf_idf) %>%
+  mutate(bigrams = reorder(bigrams, tf_idf)) %>%
+  ggplot(aes(tf_idf, bigrams, fill = president)) +
+  geom_col() +
+  facet_wrap(~president, scales = "free") +
+  theme_minimal() +
+  guides(fill = "none")
+
+```
 
 
