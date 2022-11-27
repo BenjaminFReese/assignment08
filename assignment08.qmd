@@ -266,3 +266,25 @@ bills_rec2 <- recipe(passed~., data = bills_train) %>%
 bake(prep(bills_rec2, training = bills_train), new_data = bills_train)
 ```
 
+### (e)
+
+```{r logistic regression model and workflow, warning=FALSE, message=FALSE}
+## Logistic Regression Model
+lr_mod <- 
+  logistic_reg() %>% 
+  set_engine("glm") %>%
+  set_mode(mode="classification")
+
+## Logistic Regression Workflow
+lr_wf <-
+  workflow() %>% 
+  add_model(lr_mod) %>% 
+  add_recipe(bills_rec2)
+
+## Fitting the Logistic Regression Model
+lr_fit <-
+  lr_wf%>% 
+  fit(data = bills_train)
+```
+
+
