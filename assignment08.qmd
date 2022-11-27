@@ -13,6 +13,11 @@ library(tidymodels)
 library(patchwork)
 library(factoextra)
 library(broom)
+library(tidytext)
+library(lubridate)
+library(SnowballC)
+library(igraph)
+library(ggraph)
 ```
 
 ## Exercise 01
@@ -121,4 +126,37 @@ fviz_nbclust(votes_numeric, FUN = kmeans, method = "wss")
 
 
 ```
+
+### (c)
+
+```{r creating k means function}
+## Creating k-means function
+
+
+
+```
+
+
+### (d)
+
+## Exercise 03
+
+### (a)
+
+```{r loading and cleaning exec orders, warning=FALSE,message=FALSE}
+## Loading executive orders data
+executive_orders <- read_csv("data/executive-orders.csv")
+
+## Filtering out text NAs
+exec_orders <- executive_orders %>%
+  filter(!is.na(text))
+
+## Creating bigrams
+tidy_exec <- exec_orders %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2)%>%
+  filter(!is.na(bigram))
+```
+
+
+
 
