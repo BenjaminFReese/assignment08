@@ -51,7 +51,7 @@ votes_103 <- votes_time_series %>%
 votes_pca_rec <-
   recipe(~., data = votes_103) %>%
   step_pca(starts_with("v")) %>%   
-  prep()  # run prep to prepare recipe
+  prep()  
 
 ```
 
@@ -114,7 +114,7 @@ set.seed(20220412)
 
 ## Creating recipe
 kmeans_rec <- recipe(formula = ~ .,data = votes_numeric) %>%
-  step_pca(all_predictors(), num_comp = 3) %>%
+  step_pca(all_predictors()) %>%
   prep()
 
 votes_baked <- kmeans_rec %>%
@@ -150,7 +150,8 @@ fviz_nbclust(votes_baked, FUN = kmeans, method = "wss")
 k_clust <- function(k, dataset) {
   ## Creating recipe
 kmeans_rec <- recipe(formula = ~ .,data = dataset) %>%
-  step_pca(all_predictors(), num_comp = 2) %>%
+  step_select(all_numeric()) %>%
+  step_pca(all_numeric()) %>%
   prep()
 
 ## Creating model
@@ -163,18 +164,18 @@ k_means_wflow <- workflow(
   spec = k_means_spec)
 
 ## Fitting Model
-k_means_fit <- k_means_wflow %>%
+votes_k_means_fit <- k_means_wflow %>%
   fit(data = dataset)
 
 ## Creating Dataframe to visualize
 votes_data <- bind_cols(
-  select(dataset), votes_kmeans_fit %>%
+  select(dataset), votes_k_means_fit %>%
     extract_recipe() %>%
     bake(dataset),
-  cluster = votes_kmeans_fit %>%
+  cluster = votes_k_means_fit %>%
     extract_cluster_assignment() %>%
-    pull(.cluster)
-)
+    pull(.cluster)) %>%
+    mutate(cluster = str_replace(cluster, "Cluster_",""))
 
 ## Plot
 ggplot() +
@@ -182,49 +183,12 @@ ggplot() +
     data = votes_data,
     mapping = aes(PC1, PC2, color = factor(cluster)),
     alpha = 0.5) +
-  labs(title = "K-Means with K=4 and PCA",
+  labs(title = paste0("K-Means with K=", k, " and PCA"),
        x = "PC1",
        y = "PC2", color="Cluster") +
   theme_minimal() +
   guides(text = NULL)
 }
-
-k_clust(4, votes_numeric)
-
-## Creating model
-votes_kmeans_spec <- k_means(num_clusters = 4) %>%
-  set_engine("stats", nstart = 100)
-
-## Creating workflow
-votes_kmeans_wflow <- workflow(
-  preprocessor = kmeans_rec,
-  spec = votes_kmeans_spec)
-
-## Fitting Model
-votes_kmeans_fit <- votes_kmeans_wflow %>%
-  fit(data = votes_numeric)
-
-## Creating Dataframe to visualize
-votes_data <- bind_cols(
-  select(votes_numeric), votes_kmeans_fit %>%
-    extract_recipe() %>%
-    bake(votes_numeric),
-  cluster = votes_kmeans_fit %>%
-    extract_cluster_assignment() %>%
-    pull(.cluster)
-)
-
-## Plot
-ggplot() +
-  geom_point(
-    data = votes_data,
-    mapping = aes(PC1, PC2, color = factor(cluster)),
-    alpha = 0.5) +
-  labs(title = "K-Means with K=4 and PCA",
-       x = "PC1",
-       y = "PC2", color="Cluster") +
-  theme_minimal() +
-  guides(text = NULL)
 
 ```
 
@@ -232,13 +196,12 @@ ggplot() +
 
 ```{r testing optimal clusters}
 ## Running functions
-k_clust(k=2, data=votes_numeric)
+k_clust(k=2, data=votes_103)
 
-k_clust(k=4, data=votes_numeric)
+k_clust(k=4, data=votes_103)
 
-k_clust(k=8, data=votes_numeric)
+k_clust(k=5, data=votes_103)
 ```
-
 
 ## Exercise 03
 
@@ -267,7 +230,7 @@ bigram_150 <- tidy_exec %>%
   filter(!word1 %in% stop_words$word) %>%
   filter(!word2 %in% stop_words$word) %>%
   count(word1, word2, sort = TRUE) %>%
-  slice(1:150)
+  filter(n>150)
 
 # plot the bigrams that exist more than 150 times
 bigram_graph <- bigram_150 %>%
