@@ -22,6 +22,7 @@ library(ggraph)
 library(stringr)
 library(stopwords)
 library(textrecipes)
+library(tidyclust)
 ```
 
 ## Exercise 01
@@ -113,12 +114,12 @@ set.seed(20220412)
 
 ## Creating recipe
 kmeans_rec <- recipe(formula = ~ .,data = votes_numeric) %>%
-  step_select(all_numeric())
+  step_pca(all_predictors(), num_comp = 3) %>%
+  prep()
 
-## Prepping and Baking
 votes_baked <- kmeans_rec %>%
-   prep() %>%
-   bake(new_data = votes_numeric)
+  bake(new_data = votes_numeric)
+
 
 ## Silhouette Calculation
 fviz_nbclust(votes_baked, FUN = kmeans, method = "silhouette")
@@ -148,8 +149,9 @@ fviz_nbclust(votes_baked, FUN = kmeans, method = "wss")
 #' @examples k_clust(k=2, data=votes_numeric)
 k_clust <- function(k, dataset) {
   ## Creating recipe
-k_means_rec <- recipe(formula = ~ .,data = dataset) %>%
-  step_select(all_numeric())
+kmeans_rec <- recipe(formula = ~ .,data = dataset) %>%
+  step_pca(all_predictors(), num_comp = 2) %>%
+  prep()
 
 ## Creating model
 k_means_spec <- k_means(num_clusters = k) %>%
@@ -157,25 +159,37 @@ k_means_spec <- k_means(num_clusters = k) %>%
 
 ## Creating workflow
 k_means_wflow <- workflow(
-  preprocessor = k_means_rec,
+  preprocessor = kmeans_rec,
   spec = k_means_spec)
 
 ## Fitting Model
 k_means_fit <- k_means_wflow %>%
   fit(data = dataset)
 
+## Creating Dataframe to visualize
+votes_data <- bind_cols(
+  select(dataset), votes_kmeans_fit %>%
+    extract_recipe() %>%
+    bake(dataset),
+  cluster = votes_kmeans_fit %>%
+    extract_cluster_assignment() %>%
+    pull(.cluster)
+)
+
 ## Plot
 ggplot() +
   geom_point(
-    data = k_means_fit,
-    mapping = aes(PC1, PC2, color = factor(cluster2)),
+    data = votes_data,
+    mapping = aes(PC1, PC2, color = factor(cluster)),
     alpha = 0.5) +
-  scale_color_manual(values = c("blue", "red")) +
-  labs(title = "K-Means with K=2 and PCA",
-       x = "PC1", y = "PC2") +
+  labs(title = "K-Means with K=4 and PCA",
+       x = "PC1",
+       y = "PC2", color="Cluster") +
   theme_minimal() +
   guides(text = NULL)
 }
+
+k_clust(4, votes_numeric)
 
 ## Creating model
 votes_kmeans_spec <- k_means(num_clusters = 4) %>%
@@ -187,31 +201,28 @@ votes_kmeans_wflow <- workflow(
   spec = votes_kmeans_spec)
 
 ## Fitting Model
-votes_kmeans_fit <- kmeans_wflow %>%
+votes_kmeans_fit <- votes_kmeans_wflow %>%
   fit(data = votes_numeric)
 
-votes_clusters <- bind_cols(
-  select(votes, name, party),
-  select(votes_pca, PC1, PC2),
-  cluster2 = votes_kmeans_2 %>%
-  extract_cluster_assignment() %>%
-     pull(.cluster),
-  cluster5 = votes_kmeans_5 %>%
+## Creating Dataframe to visualize
+votes_data <- bind_cols(
+  select(votes_numeric), votes_kmeans_fit %>%
+    extract_recipe() %>%
+    bake(votes_numeric),
+  cluster = votes_kmeans_fit %>%
     extract_cluster_assignment() %>%
-    pull(.cluster))
+    pull(.cluster)
+)
 
 ## Plot
 ggplot() +
   geom_point(
-    data = votes_clusters,
-    mapping = aes(PC1, PC2, color = factor(cluster2)),
+    data = votes_data,
+    mapping = aes(PC1, PC2, color = factor(cluster)),
     alpha = 0.5) +
-  geom_text(data = filter(votes_pca, name %in% names),
-            mapping = aes(PC1, PC2,)) +
-  scale_color_manual(values = c("blue", "red")) +
-  labs(title = "K-Means with K=2 and PCA",
+  labs(title = "K-Means with K=4 and PCA",
        x = "PC1",
-       y = "PC2") +
+       y = "PC2", color="Cluster") +
   theme_minimal() +
   guides(text = NULL)
 
