@@ -128,8 +128,7 @@ fviz_nbclust(votes_baked, FUN = kmeans, method = "silhouette")
 fviz_nbclust(votes_baked, FUN = kmeans, method = "gap_stat")
 
 ## WSS Calculation
-fviz_nbclust(votes_baked, FUN = kmeans, method = "wss") + 
-  geom_vline(xintercept = 4, linetype = 2)
+fviz_nbclust(votes_baked, FUN = kmeans, method = "wss")
 
 ```
 
