@@ -201,7 +201,7 @@ ggplot() +
 k_clust(k=2, data=votes_103)
 
 ## WSS
-k_clust(k=4, data=votes_103)
+k_clust(k=2, data=votes_103)
 
 ## Gap Statistic
 k_clust(k=5, data=votes_103)
