@@ -116,7 +116,7 @@ set.seed(20220412)
 
 ## Creating recipe
 kmeans_rec <- recipe(formula = ~ .,data = votes_numeric) %>%
-  step_pca(all_predictors()) %>%
+  step_select(starts_with("v")) %>%
   prep()
 
 votes_baked <- kmeans_rec %>%
@@ -134,7 +134,7 @@ fviz_nbclust(votes_baked, FUN = kmeans, method = "wss")
 
 ```
 
-The average silhouette width indicates an optimal number of clusters is 2. The gap statistic indicates that the optimal number of clusters is 5. The within sum squares indicates that the optimal number is 4 clusters.
+The average silhouette width indicates an optimal number of clusters is 2. The gap statistic indicates that the optimal number of clusters is 4. The within sum squares seems to indicate that the optimal number is 4 clusters.
 
 ### (c)
 
@@ -152,9 +152,11 @@ The average silhouette width indicates an optimal number of clusters is 2. The g
 k_clust <- function(k, dataset) {
   ## Creating recipe
 kmeans_rec <- recipe(formula = ~ .,data = dataset) %>%
-  step_select(all_numeric()) %>%
-  step_pca(all_numeric()) %>%
-  prep()
+  step_select(starts_with("v"))
+
+rec_pca <- recipe(formula = ~ ., data = dataset) %>%
+  step_select(starts_with("v")) %>%
+  step_pca(all_numeric(), id = "pca")
 
 ## Creating model
 k_means_spec <- k_means(num_clusters = k) %>%
@@ -162,7 +164,7 @@ k_means_spec <- k_means(num_clusters = k) %>%
 
 ## Creating workflow
 k_means_wflow <- workflow(
-  preprocessor = kmeans_rec,
+  preprocessor = rec_pca,
   spec = k_means_spec)
 
 ## Fitting Model
@@ -206,7 +208,7 @@ k_clust(k=2, data=votes_103)
 k_clust(k=4, data=votes_103)
 
 ## Gap Statistic
-k_clust(k=5, data=votes_103)
+k_clust(k=4, data=votes_103)
 ```
 
 ## Exercise 03
