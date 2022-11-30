@@ -81,7 +81,8 @@ p1 <- votes_pca_rec %>%
   scale_color_manual(values = c("D" = "blue", "R"= "red")) +
   theme_minimal() +
   labs(x="PC1", y= "PC2", title = "PC1 and PC2 of the 103rd Senate",
-       subtitle = "Color by Party", color="Party")
+       subtitle = "Color by Party", color="Party",
+       caption="Data Source: Brad Robinson")
 
 ## Region Plot
 p2 <- votes_pca_rec %>%
@@ -90,7 +91,8 @@ p2 <- votes_pca_rec %>%
   geom_point() +
   theme_minimal() + 
   labs(x="PC1", y= "PC2", title = "PC1 and PC2 of the 103rd Senate",
-       subtitle = "Color by Region", color="US Region")
+       subtitle = "Color by Region", color="US Region",
+       caption="Data Source: Brad Robinson")
 
 ## Displaying Plots
 p1 + p2
@@ -132,13 +134,12 @@ fviz_nbclust(votes_baked, FUN = kmeans, method = "wss")
 
 ```
 
-The average silhouette width indicates an optimal number of clusters is 2. The gap statistic indicates that the optimal number of clusters is 5. The within sum squares indicates that the optimal number of 4 clusters.
+The average silhouette width indicates an optimal number of clusters is 2. The gap statistic indicates that the optimal number of clusters is 5. The within sum squares indicates that the optimal number is 4 clusters.
 
 ### (c)
 
-```{r creating k means function}
+```{r creating k means function, warning=FALSE,message=FALSE}
 ## Creating the Function
-
 #' k_clust
 #'
 #' @param k a numeric variable indicating the number of clusters to be used for k-means clustering
@@ -147,7 +148,7 @@ The average silhouette width indicates an optimal number of clusters is 2. The g
 #' @return a ggplot object that plots the first and second principal components with color coded clusters
 #'
 #'
-#' @examples k_clust(k=2, data=votes_numeric)
+#' @examples k_clust(k=2, data=votes_103)
 k_clust <- function(k, dataset) {
   ## Creating recipe
 kmeans_rec <- recipe(formula = ~ .,data = dataset) %>%
@@ -186,7 +187,8 @@ ggplot() +
     alpha = 0.5) +
   labs(title = paste0("K-Means with K=", k, " and PCA"),
        x = "PC1",
-       y = "PC2", color="Cluster") +
+       y = "PC2", color="Cluster",
+       caption="Data Source: Brad Robinson") +
   theme_minimal() +
   guides(text = NULL)
 }
@@ -201,7 +203,7 @@ ggplot() +
 k_clust(k=2, data=votes_103)
 
 ## WSS
-k_clust(k=2, data=votes_103)
+k_clust(k=4, data=votes_103)
 
 ## Gap Statistic
 k_clust(k=5, data=votes_103)
@@ -293,6 +295,9 @@ bills %>%
 ### (b)
 
 ```{r splitting bills data, warning=FALSE, message=FALSE}
+## Seeting the Seed
+set.seed(20220414)
+
 ## Splitting into training and testing
 bills <- bills %>%
   select(-bill_number)
@@ -396,11 +401,11 @@ predictions %>%
 roc_auc(data = predictions, truth = passed, estimate = .pred_1)
 ```
 
-The accuracy, or how often the model is correct, is quite high, about .96. A high accuracy, all else equal, is a sign of a high quality model. The precision and recall are not as high, though. Recall, or how often the model is correct when there is an event is only about .13 and precision, or how often the model is correct when it predicts events is about .33. Both of these values are quite low. The ROC and AUC, however, are relatively good. The ROC Curve, as shown in the plot above, is consistent with a good classifier. Further, the AUC is about .86, which is also good, though not excellent. Overall, the model has high accuracy, but its useful is limited by its low recall and precision.
+The accuracy, or how often the model is correct, is quite high, about .97. A high accuracy, all else equal, is a sign of a high quality model. The precision and recall are not high, though. Recall, or how often the model is correct when there is an event is only about .05 and precision, or how often the model is correct when it predicts events is about .11. Both of these values are quite low. The ROC and AUC, however, are relatively good. The ROC Curve, as shown in the plot above, is consistent with a good classifier. Further, the AUC is about .85, which is also good, though not excellent. Overall, the model has high accuracy, but its usefulness is limited by its low recall and precision.
 
-The first improvement that I can suggest is to include the actual text of each bill beyond their short descriptions. Have more text and, more specifically, a model that predicts bill passage based on the language in the actual bill provisions should increase the quality of the model. In addition, having more data, even without bill text, would be helpful. Having many years of bills may improve model fit, though with changing partisan dynamics, a longer time frame may not be helpful. 
+The first improvement that I can suggest is to include the actual text of each bill beyond their short descriptions. Having more text and, more specifically, a model that predicts bill passage based on the language in the actual bill provisions should increase the quality of the model. In addition, having more data, even without bill text, would be helpful. Having many different years of bills may improve model fit, though with changing partisan dynamics, a longer time frame may not be helpful. 
 
 Second, it would be an improvement to include other non-text variables in the model such as the party of the sponsor, the party in control of the chamber, the monetary cost of the bill, and other factors that may influence the probability of a bill passing. 
 
-Third, utilizing v-fold cross-validation could produce a "better" model that could then be implemented on the testing data. Through the process of cross-validation, perhaps a better model could be found. Further, utilizing alternate classification algorithms like a CART model or a random forest model could result in a higher quality model. This, combined with cross-validation, should be tried to find the best candidate model.
+Third, utilizing v-fold cross-validation could produce a "better" model that could then be implemented on the testing data. Through the process of cross-validation, perhaps a better model could be found. Further, utilizing alternate classification algorithms like a CART model or a random forest model could result in a higher quality predictive model. This, combined with cross-validation, should be tried to find the best candidate model.
 
